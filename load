@@ -1,0 +1,105 @@
+# Source this file
+
+function abspath() {
+    path=$1
+    python -c "import sys, os; sys.stdout.write(os.path.abspath('$path\n'))"
+}
+
+MYDIR=$(abspath $(dirname $BASH_SOURCE))
+
+PRESENTATION_PROGRESS="$MYDIR/.presentation-progress"
+PRESENTATION_SLIDES_PATH="$MYDIR/.presentation-slides"
+
+PRESENTATION_SECTION="$MYDIR/section"
+PRESENTATION_SECTION_COUNT="$MYDIR/section-count"
+
+function presentation-slides() {
+    touch "$PRESENTATION_SLIDES_PATH"
+    slides=$(cat "$PRESENTATION_SLIDES_PATH")
+
+    if [[ -f $slides ]]; then
+        echo $slides
+    else
+        return 1
+    fi
+}
+
+function presentation-section() {
+    section=$1
+    "$PRESENTATION_SECTION" "$(presentation-slides)" $section
+}
+
+function presentation-section-count() {
+    "$PRESENTATION_SECTION_COUNT" "$(presentation-slides)"
+}
+
+function presentation-update-progress() {
+    section=$1
+    echo $section > "$PRESENTATION_PROGRESS"
+}
+
+function presentation-has-progress() {
+    test -f "$PRESENTATION_PROGRESS"
+}
+
+function presentation-init() {
+    if ! presentation-has-progress; then
+        presentation-update-progress 0
+    fi
+}
+
+function presentation-progress() {
+    cat "$PRESENTATION_PROGRESS"
+}
+
+function presentation-show() {
+    if ! presentation-slides > /dev/null; then
+        echo "Use: start slides.txt"
+        return
+    fi
+
+    clear
+    presentation-section $(presentation-progress)
+}
+
+function presentation-save-slides() {
+    if [[ ! -f $slides ]]; then
+        echo "$slides: No such file or directory"
+        return 1
+    fi
+
+    abspath "$slides" > "$PRESENTATION_SLIDES_PATH"
+}
+
+function presentation-start() {
+    slides=$1
+
+    if [[ -n $slides ]]; then
+        presentation-save-slides "$slides" || return
+    fi
+
+    presentation-update-progress 0
+    presentation-show
+}
+
+function presentation-next() {
+    if [ $(presentation-progress) -lt $(($(presentation-section-count) - 1)) ]; then
+        presentation-update-progress $(($(presentation-progress) + 1))
+    fi
+    presentation-show
+}
+
+function presentation-previous() {
+    if [ $(presentation-progress) -gt 0 ]; then
+        presentation-update-progress $(($(presentation-progress) - 1))
+    fi
+    presentation-show
+}
+
+alias start=presentation-start
+alias n=presentation-next
+alias p=presentation-previous
+alias c=presentation-show
+
+presentation-init
+presentation-show

@@ -1,0 +1,12 @@
+#!/bin/bash -eu
+
+set -o pipefail
+
+SLIDES=$1
+
+if grep -n ^--- "$SLIDES" | head -1 > /dev/null; then
+    count=$(grep -n ^--- "$SLIDES" | wc -l)
+    echo $((count - 1))
+else
+    echo 0
+fi

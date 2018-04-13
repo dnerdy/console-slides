@@ -1,0 +1,13 @@
+#!/bin/bash -eu
+
+set -o pipefail
+
+SLIDES=$1
+section=$2
+
+grep -n ^--- "$SLIDES" | cut -d: -f1 | head -n $(($section + 2)) | tail -n 2 | {
+    read start
+    read end
+
+    head -n $(($end - 1)) "$SLIDES" | tail -n $(($end - $start - 1))
+}
